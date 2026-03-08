@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Chore Tracker</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -347,11 +352,19 @@ const API_BASE_URL = "/api";
                 console.error("Failed to save chore to database", error);
             });
         };
-
+// Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+            });
+        }
         // Start App
         init();
     </script>
 </body>
 
 </html>
+
 
