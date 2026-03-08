@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Chore Tracker</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #4a90e2;
+            --text-dark: #333333;
+            --text-light: #888888;
+            --border: #e0e0e0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: var(--card-bg);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        h1 { margin: 0 0 10px 0; font-size: 24px; }
+        #current-day-label { color: var(--text-light); font-size: 16px; margin-bottom: 15px;}
+        
+        .filter-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 10px;
+            scrollbar-width: none; 
+        }
+        .filter-container::-webkit-scrollbar { display: none; } 
+        
+        .filter-btn {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        h2 { font-size: 18px; margin-top: 20px; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
+        
+        .chore-list { list-style: none; padding: 0; margin: 0; }
+        .chore-item {
+            background-color: var(--card-bg);
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: opacity 0.2s ease;
+        }
+        .chore-item label {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            cursor: pointer;
+        }
+        .chore-item input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            accent-color: var(--primary);
+        }
+        .chore-details { display: flex; flex-direction: column; }
+        .chore-name { font-size: 16px; font-weight: 500; transition: color 0.2s ease; }
+        .chore-assignee { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+        .completed .chore-name { text-decoration: line-through; color: var(--text-light); }
+        .completed { opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Chore Tracker</h1>
+        <div id="current-day-label"></div>
+        <div class="filter-container" id="filter-buttons">
+            </div>
+    </header>
+
+    <div class="container">
+        <h2>Daily Chores</h2>
+        <ul class="chore-list" id="daily-chores-list"></ul>
+
+        <h2 id="weekly-zone-title">Weekly Zone</h2>
+        <ul class="chore-list" id="weekly-chores-list"></ul>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        // Change this to your live backend URL once you host your Node.js server!
+        const API_BASE_URL = "http://localhost:3000/api";
+
+        // --- 2. DATA STRUCTURE ---
+        const familyMembers = ["All", "Everyone", "Dad", "Mom", "Aubriella", "Christopher", "Alexia"];
+        let familyPoints = { "Dad": 0, "Mom": 0, "Aubriella": 0, "Christopher": 0, "Alexia": 0 };
+
+        const dailyChores = [
+            { task: "Empty Trash", assignee: "Christopher" },
+            { task: "Wash Dishes", assignee: "Alexia" },
+            { task: "Make Beds", assignee: "Everyone" },
+            { task: "Wipe Down Counter Tops", assignee: "Mom" },
+            { task: "Feed Dog", assignee: "Christopher" },
+            { task: "Quick Tidy", assignee: "Everyone" },
+            { task: "Empty Dishwasher", assignee: "Aubriella" },
+            { task: "Fold Laundry", assignee: "Everyone" },
+            { task: "Wipe Down Tables", assignee: "Mom" },
+            { task: "Wipe down Bathrooms", assignee: "Aubriella" },
+            { task: "Get Mail", assignee: "Dad" },
+            { task: "Pick Up Clothes", assignee: "Alexia" },
+            { task: "Hand Towels", assignee: "Alexia" },
+            { task: "Declutter Living Area", assignee: "Everyone" },
+            { task: "Laundry", assignee: "Dad" }
+        ];
+
+        const weeklyChores = {
+            "Monday": { zone: "Kitchen", tasks: [
+                { task: "Sweep & Mop", assignee: "Mom" }, { task: "Scrub Sink", assignee: "Alexia" },
+                { task: "Clean Appliances", assignee: "Aubriella" }, { task: "Organize Pantries", assignee: "Christopher" },
+                { task: "Empty Trash", assignee: "Christopher" }, { task: "Put Away Dishes", assignee: "Aubriella" },
+                { task: "Clean Kitchen Tables", assignee: "Mom" }, { task: "Clean Counter Tops", assignee: "Mom" }
+            ]},
+            "Tuesday": { zone: "Bedrooms", tasks: [
+                { task: "Dust Shelves", assignee: "Everyone" }, { task: "Throw Away Garbage", assignee: "Everyone" },
+                { task: "Vacuum", assignee: "Everyone" }, { task: "Pick Up Clothes", assignee: "Everyone" },
+                { task: "Pick Up Clutter", assignee: "Everyone" }, { task: "Organize", assignee: "Everyone" }
+            ]},
+            "Wednesday": { zone: "Bathrooms", tasks: [
+                { task: "Wash Trash Cans", assignee: "Christopher" }, { task: "Clean Bath Tubs", assignee: "Aubriella" },
+                { task: "Clean Mirrors", assignee: "Alexia" }, { task: "Wash Toilets", assignee: "Aubriella" },
+                { task: "Sweep & Mop", assignee: "Christopher" }, { task: "Shower Curtains", assignee: "Aubriella" },
+                { task: "Empty Trash", assignee: "Christopher" }, { task: "Wipe down Sink & Cabinets", assignee: "Alexia" }
+            ]},
+            "Thursday": { zone: "Living Room & Foyer", tasks: [
+                { task: "Organize Foyer", assignee: "Aubriella" }, { task: "Dust Electronics", assignee: "Christopher" },
+                { task: "Vacuum", assignee: "Alexia" }, { task: "Dust Tabletops", assignee: "Christopher" },
+                { task: "Tidy Room", assignee: "Alexia" }, { task: "Remove Cobwebs", assignee: "Christopher" },
+                { task: "Sweep & Mop Floors", assignee: "Aubriella" }, { task: "Declutter", assignee: "Aubriella" },
+                { task: "Wash Parents Bedding", assignee: "Dad" }
+            ]},
+            "Friday": { zone: "Laundry Room & Weight Room", tasks: [
+                { task: "Cleaning Cycle in Washer", assignee: "Dad" }, { task: "Remove Cobwebs", assignee: "Christopher" },
+                { task: "Sweep & Mop", assignee: "Aubriella" }, { task: "Empty Trash", assignee: "Christopher" },
+                { task: "Discard Empty Cleaning Supplies", assignee: "Christopher" }, { task: "Declutter & Organize", assignee: "Aubriella" },
+                { task: "Wash Aubriella's Bedding", assignee: "Dad" }
+            ]},
+            "Saturday": { zone: "Closets", tasks: [
+                { task: "Organize Items", assignee: "Everyone" }, { task: "Sort Clothes", assignee: "Everyone" },
+                { task: "Donate Old Clothes", assignee: "Everyone" }, { task: "Hall Closet", assignee: "Christopher" },
+                { task: "Foyer Closet", assignee: "Alexia" }, { task: "Wash Christopher's Bedding", assignee: "Dad" }
+            ]},
+            "Sunday": { zone: "Outside", tasks: [
+                { task: "Wash Alexia's Bedding", assignee: "Dad" }, { task: "Clean up Trash", assignee: "Dad/Christopher" },
+                { task: "Organize Garage", assignee: "Dad/Christopher" }, { task: "Organize", assignee: "Christopher/Alexia/Aubriella" },
+                { task: "Clean Patio", assignee: "Mom" }, { task: "Clean Light Fixtures", assignee: "Dad/Christopher" },
+                { task: "Sweep Porches", assignee: "Alexia" }, { task: "Clean Doormats", assignee: "Alexia" },
+                { task: "Clean Dog Poop", assignee: "Aubriella" }
+            ]}
+        };
+
+        // --- 3. STATE & INIT ---
+        let currentFilter = "All";
+        const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const todayName = daysOfWeek[new Date().getDay()];
+        const todayZoneData = weeklyChores[todayName];
+
+        async function init() {
+            document.getElementById('current-day-label').innerText = `${todayName} - ${todayZoneData.zone}`;
+            document.getElementById('weekly-zone-title').innerText = `${todayName} Zone: ${todayZoneData.zone}`;
+            renderFilters();
+            renderChores();
+            await loadCompletedChores(); 
+        }
+
+        // --- 4. RENDER UI ---
+        function renderFilters() {
+            const container = document.getElementById('filter-buttons');
+            container.innerHTML = '';
+            familyMembers.forEach(member => {
+                if(member === "Everyone") return; 
+                
+                const btn = document.createElement('button');
+                btn.className = `filter-btn ${currentFilter === member ? 'active' : ''}`;
+                
+                if (familyPoints[member] !== undefined) {
+                    btn.innerText = `${member} (${familyPoints[member]})`;
+                } else {
+                    btn.innerText = member; 
+                }
+
+                btn.onclick = () => {
+                    currentFilter = member;
+                    renderFilters();
+                    renderChores();
+                    loadCompletedChores(); 
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderChores() {
+            const dailyContainer = document.getElementById('daily-chores-list');
+            const weeklyContainer = document.getElementById('weekly-chores-list');
+            dailyContainer.innerHTML = '';
+            weeklyContainer.innerHTML = '';
+
+            const filterTask = (task) => {
+                if (currentFilter === "All") return true;
+                if (task.assignee.includes("Everyone")) return true;
+                return task.assignee.includes(currentFilter); 
+            };
+
+            const createChoreHTML = (chore, index, type) => {
+                const id = `${type}-${index}`;
+                return `
+                    <li class="chore-item" id="item-${id}">
+                        <label>
+                            <input type="checkbox" onchange="toggleChore(this, '${chore.task}', '${chore.assignee}')">
+                            <div class="chore-details">
+                                <span class="chore-name">${chore.task}</span>
+                                <span class="chore-assignee">${chore.assignee}</span>
+                            </div>
+                        </label>
+                    </li>
+                `;
+            };
+
+            dailyChores.filter(filterTask).forEach((chore, i) => {
+                dailyContainer.innerHTML += createChoreHTML(chore, i, 'daily');
+            });
+
+            todayZoneData.tasks.filter(filterTask).forEach((chore, i) => {
+                weeklyContainer.innerHTML += createChoreHTML(chore, i, 'weekly');
+            });
+        }
+
+        // --- 5. FETCH DATA FROM NEON DB ---
+        async function loadCompletedChores() {
+            try {
+                // Pointing to your new Node API GET route
+                const response = await fetch(`${API_BASE_URL}/data`);
+                const data = await response.json(); 
+                
+                // 1. Update the Points from the Neon Bank
+                if (data.points) {
+                    familyPoints = data.points;
+                    renderFilters(); 
+                }
+
+                // 2. Process today's checkboxes
+                const latestState = {};
+                if (data.log) {
+                    data.log.forEach(row => {
+                        // The database returns snake_case for column names
+                        const key = row.chore_name + "|" + row.assignee;
+                        latestState[key] = {
+                            status: row.status 
+                        };
+                    });
+                }
+
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(box => {
+                    const label = box.nextElementSibling;
+                    const choreName = label.querySelector('.chore-name').innerText;
+                    const assignee = label.querySelector('.chore-assignee').innerText;
+                    
+                    const key = choreName + "|" + assignee;
+                    
+                    if (latestState[key] && latestState[key].status === true) {
+                        box.checked = true;
+                        box.closest('.chore-item').classList.add('completed');
+                    } else {
+                        box.checked = false;
+                        box.closest('.chore-item').classList.remove('completed');
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to load data from database", error);
+            }
+        }
+
+        // --- 6. SEND DATA TO NEON DB (Optimistic UI) ---
+        window.toggleChore = function(checkboxElement, choreName, assignee) {
+            const isCompleted = checkboxElement.checked;
+            const listItem = checkboxElement.closest('.chore-item');
+            
+            // A. Visual Update Immediately
+            if (isCompleted) {
+                listItem.classList.add('completed');
+            } else {
+                listItem.classList.remove('completed');
+            }
+
+            // B. Figure out who gets the point
+            let earner = assignee;
+            if (earner.includes("Everyone") || earner.includes("/")) {
+                earner = currentFilter === "All" ? "Dad" : currentFilter;
+            }
+
+            // C. Math Update Immediately
+            if (familyPoints[earner] !== undefined) {
+                if (isCompleted) {
+                    familyPoints[earner] += 1;
+                } else {
+                    familyPoints[earner] -= 1;
+                }
+                renderFilters(); 
+            }
+
+            // D. Background Sync with standard JSON
+            const payload = {
+                choreName: choreName,
+                assignee: assignee,
+                status: isCompleted,
+                completedBy: earner 
+            };
+
+            fetch(`${API_BASE_URL}/toggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            }).catch(error => {
+                console.error("Failed to save chore to database", error);
+            });
+        };
+
+        // Start App
+        init();
+    </script>
+</body>
+</html>
