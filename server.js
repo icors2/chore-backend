@@ -4,6 +4,8 @@ const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
+// Tell Express to serve your HTML file from the public folder
+app.use(express.static('public'));
 app.use(cors()); // Allows your frontend to talk to this backend
 app.use(express.json());
 
@@ -76,4 +78,5 @@ app.post('/api/toggle', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
