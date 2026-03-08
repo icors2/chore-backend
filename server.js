@@ -4,42 +4,62 @@ const cors = require('cors');
 const { Pool } = require('pg');
 
 const app = express();
-// Tell Express to serve your HTML file from the public folder
-app.use(express.static('public'));
-app.use(cors()); // Allows your frontend to talk to this backend
+app.use(cors());
 app.use(express.json());
+app.use(express.static('public')); // This still serves your index.html!
 
-// Connect to Neon
+// Connect to Neon Database
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// GET Route: Send points and today's chores to the app
-app.get('/api/data', async (req, res) => {
+// --- NEW: VERIFY PIN ROUTE ---
+app.post('/api/verify-pin', async (req, res) => {
+  const { name, pin } = req.body;
   try {
-    const pointsResult = await pool.query('SELECT name, points FROM family_members');
-    const choresResult = await pool.query('SELECT chore_name, assignee, status, completed_by FROM chore_logs WHERE completed_date = CURRENT_DATE');
-
-    // Format points into a simple object: { "Dad": 5, "Mom": 10 }
-    const points = {};
-    pointsResult.rows.forEach(row => { points[row.name] = row.points; });
-
-    res.json({ points: points, log: choresResult.rows });
+    const result = await pool.query('SELECT pin_code FROM family_members WHERE name = $1', [name]);
+    
+    if (result.rows.length > 0 && result.rows[0].pin_code === pin) {
+      res.json({ success: true });
+    } else {
+      res.json({ success: false, message: 'Incorrect PIN' });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST Route: Handle a checkbox click
+// --- UPDATED: GET DATA (Now includes streaks!) ---
+app.get('/api/data', async (req, res) => {
+  try {
+    // We are now fetching current_streak alongside points
+    const membersResult = await pool.query('SELECT name, points, current_streak FROM family_members');
+    const choresResult = await pool.query('SELECT chore_name, assignee, status, completed_by FROM chore_logs WHERE completed_date = CURRENT_DATE');
+
+    const points = {};
+    const streaks = {};
+    
+    // Format the data for the frontend
+    membersResult.rows.forEach(row => { 
+      points[row.name] = row.points; 
+      streaks[row.name] = row.current_streak;
+    });
+
+    res.json({ points: points, streaks: streaks, log: choresResult.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- TOGGLE CHORE ---
 app.post('/api/toggle', async (req, res) => {
   const { choreName, assignee, status, completedBy } = req.body;
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN'); // Start transaction
+    await client.query('BEGIN');
 
-    // 1. Check if this chore was already checked today to prevent double-counting points
     const prevChore = await client.query(
       'SELECT status FROM chore_logs WHERE chore_name = $1 AND assignee = $2 AND completed_date = CURRENT_DATE',
       [choreName, assignee]
@@ -50,7 +70,6 @@ app.post('/api/toggle', async (req, res) => {
       prevStatus = prevChore.rows[0].status;
     }
 
-    // 2. Only update the point bank if the status actually changed
     if (prevStatus !== status && ['Dad', 'Mom', 'Aubriella', 'Christopher', 'Alexia'].includes(completedBy)) {
       const pointChange = status ? 1 : -1;
       await client.query(
@@ -59,7 +78,6 @@ app.post('/api/toggle', async (req, res) => {
       );
     }
 
-    // 3. Upsert the chore log (Insert it, or update it if it already exists)
     await client.query(`
       INSERT INTO chore_logs (chore_name, assignee, completed_by, status, completed_date)
       VALUES ($1, $2, $3, $4, CURRENT_DATE)
@@ -67,22 +85,20 @@ app.post('/api/toggle', async (req, res) => {
       DO UPDATE SET status = EXCLUDED.status, completed_by = EXCLUDED.completed_by
     `, [choreName, assignee, completedBy, status]);
 
-    await client.query('COMMIT'); // Save transaction
+    await client.query('COMMIT');
     res.json({ success: true });
   } catch (err) {
-    await client.query('ROLLBACK'); // Cancel if something broke
+    await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
-const PORT = process.env.PORT || 3000;
-// GET Route: Admin History - fetch completed chores for a specific date
+// --- ADMIN HISTORY ---
 app.get('/api/history/:date', async (req, res) => {
   try {
     const { date } = req.params;
-    // Look up any chores marked as true on the requested date
     const historyResult = await pool.query(
       'SELECT chore_name, assignee, completed_by FROM chore_logs WHERE status = true AND completed_date = $1',
       [date]
@@ -93,5 +109,5 @@ app.get('/api/history/:date', async (req, res) => {
   }
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
-
