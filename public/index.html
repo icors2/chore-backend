@@ -19,6 +19,7 @@
             --text-dark: #333333;
             --text-light: #888888;
             --border: #e0e0e0;
+            --danger: #e74c3c;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -38,101 +39,60 @@
         }
         h1 { margin: 0 0 10px 0; font-size: 24px; }
         
-        /* Admin Button - Hidden by default */
         #history-btn { 
-            display: none; 
-            background-color: #333; 
-            color: white; 
-            border: none; 
-            padding: 8px 15px; 
-            border-radius: 5px; 
-            margin-bottom: 15px; 
-            cursor: pointer;
-            font-size: 14px;
+            display: none; background-color: #333; color: white; border: none; 
+            padding: 8px 15px; border-radius: 5px; margin-bottom: 15px; cursor: pointer; font-size: 14px;
         }
 
         #current-day-label { color: var(--text-light); font-size: 16px; margin-bottom: 15px;}
         
         .filter-container {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 10px;
-            scrollbar-width: none; 
+            display: flex; overflow-x: auto; gap: 10px; padding-bottom: 10px; scrollbar-width: none; 
         }
         .filter-container::-webkit-scrollbar { display: none; } 
         
         .filter-btn {
-            background-color: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 14px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
+            background-color: var(--bg-color); border: 1px solid var(--border); border-radius: 20px;
+            padding: 8px 16px; font-size: 14px; cursor: pointer; white-space: nowrap; transition: all 0.2s ease;
         }
-        .filter-btn.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
+        .filter-btn.active { background-color: var(--primary); color: white; border-color: var(--primary); }
 
         .container { padding: 20px; max-width: 600px; margin: 0 auto; }
         h2 { font-size: 18px; margin-top: 20px; border-bottom: 2px solid var(--border); padding-bottom: 5px; }
         
         .chore-list { list-style: none; padding: 0; margin: 0; }
         .chore-item {
-            background-color: var(--card-bg);
-            margin-bottom: 10px;
-            padding: 15px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: opacity 0.2s ease;
+            background-color: var(--card-bg); margin-bottom: 10px; padding: 15px; border-radius: 10px;
+            display: flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        .chore-item label {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            cursor: pointer;
-        }
-        .chore-item input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
-            margin-right: 15px;
-            accent-color: var(--primary);
-        }
+        .chore-item label { display: flex; align-items: center; width: 100%; cursor: pointer; }
+        .chore-item input[type="checkbox"] { width: 24px; height: 24px; margin-right: 15px; accent-color: var(--primary); }
         .chore-details { display: flex; flex-direction: column; }
-        .chore-name { font-size: 16px; font-weight: 500; transition: color 0.2s ease; }
+        .chore-name { font-size: 16px; font-weight: 500; }
         .chore-assignee { font-size: 12px; color: var(--text-light); margin-top: 4px; }
-        .completed .chore-name { text-decoration: line-through; color: var(--text-light); }
-        .completed { opacity: 0.7; }
+        .completed { opacity: 0.6; }
+        .completed .chore-name { text-decoration: line-through; }
 
-        /* Admin History Modal Styles */
+        /* Modals */
         .modal { 
-            display: none; 
-            position: fixed; 
-            z-index: 200; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            height: 100%; 
-            background-color: rgba(0,0,0,0.5); 
+            display: none; position: fixed; z-index: 200; left: 0; top: 0; 
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); 
         }
         .modal-content { 
-            background-color: var(--card-bg); 
-            margin: 15% auto; 
-            padding: 20px; 
-            border-radius: 10px; 
-            width: 85%; 
-            max-width: 500px; 
-            max-height: 70vh; 
-            overflow-y: auto;
+            background-color: var(--card-bg); margin: 20% auto; padding: 25px; 
+            border-radius: 15px; width: 80%; max-width: 350px; text-align: center;
         }
         .close-btn { color: var(--text-light); float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        #history-date { padding: 8px; margin-bottom: 15px; width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 5px;}
+        
+        input[type="date"], input[type="password"] { 
+            padding: 12px; margin: 10px 0; width: 100%; box-sizing: border-box; 
+            border: 1px solid var(--border); border-radius: 8px; font-size: 16px;
+        }
+        .btn-block { 
+            width: 100%; padding: 12px; background-color: var(--primary); color: white; 
+            border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px;
+        }
+        #pin-error { color: var(--danger); font-size: 14px; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -141,20 +101,18 @@
         <h1>Chore Tracker</h1>
         <button id="history-btn" onclick="toggleHistory()">📅 View History</button>
         <div id="current-day-label"></div>
-        <div class="filter-container" id="filter-buttons">
-            </div>
+        <div class="filter-container" id="filter-buttons"></div>
     </header>
 
     <div class="container">
         <h2>Daily Chores</h2>
         <ul class="chore-list" id="daily-chores-list"></ul>
-
         <h2 id="weekly-zone-title">Weekly Zone</h2>
         <ul class="chore-list" id="weekly-chores-list"></ul>
     </div>
 
     <div id="history-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-height: 70vh; overflow-y: auto; max-width: 500px;">
             <span class="close-btn" onclick="toggleHistory()">&times;</span>
             <h2>Admin History</h2>
             <input type="date" id="history-date" onchange="fetchHistory()">
@@ -162,30 +120,35 @@
         </div>
     </div>
 
+    <div id="pin-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="pin-title">Enter PIN</h2>
+            <p id="pin-subtitle"></p>
+            <input type="password" id="pin-input" pattern="[0-9]*" inputmode="numeric" placeholder="4-digit PIN">
+            <button class="btn-block" onclick="submitPin()">Login</button>
+            <p id="pin-error">Incorrect PIN. Try again.</p>
+            <button class="btn-block" style="background:none; color:var(--text-light);" onclick="closePinModal()">Cancel</button>
+        </div>
+    </div>
+
     <script>
-        // --- 1. CONFIGURATION ---
-        // Looks directly at your Render Node.js server
         const API_BASE_URL = "/api";
 
-        // --- 2. DATA STRUCTURE ---
-        const familyMembers = ["All", "Everyone", "Dad", "Mom", "Aubriella", "Christopher", "Alexia"];
-        let familyPoints = { "Dad": 0, "Mom": 0, "Aubriella": 0, "Christopher": 0, "Alexia": 0 };
+        // --- Data & State ---
+        const familyMembers = ["All", "Dad", "Mom", "Aubriella", "Christopher", "Alexia"];
+        let familyPoints = {};
+        let familyStreaks = {};
+        let authenticatedUser = null; // Stores who is currently logged in
+        let pendingUser = null; // User clicked but not yet verified
 
         const dailyChores = [
-            { task: "Empty Trash", assignee: "Christopher" },
-            { task: "Wash Dishes", assignee: "Alexia" },
-            { task: "Make Beds", assignee: "Everyone" },
-            { task: "Wipe Down Counter Tops", assignee: "Mom" },
-            { task: "Feed Dog", assignee: "Christopher" },
-            { task: "Quick Tidy", assignee: "Everyone" },
-            { task: "Empty Dishwasher", assignee: "Aubriella" },
-            { task: "Fold Laundry", assignee: "Everyone" },
-            { task: "Wipe Down Tables", assignee: "Mom" },
-            { task: "Wipe down Bathrooms", assignee: "Aubriella" },
-            { task: "Get Mail", assignee: "Dad" },
-            { task: "Pick Up Clothes", assignee: "Alexia" },
-            { task: "Hand Towels", assignee: "Alexia" },
-            { task: "Declutter Living Area", assignee: "Everyone" },
+            { task: "Empty Trash", assignee: "Christopher" }, { task: "Wash Dishes", assignee: "Alexia" },
+            { task: "Make Beds", assignee: "Everyone" }, { task: "Wipe Down Counter Tops", assignee: "Mom" },
+            { task: "Feed Dog", assignee: "Christopher" }, { task: "Quick Tidy", assignee: "Everyone" },
+            { task: "Empty Dishwasher", assignee: "Aubriella" }, { task: "Fold Laundry", assignee: "Everyone" },
+            { task: "Wipe Down Tables", assignee: "Mom" }, { task: "Wipe down Bathrooms", assignee: "Aubriella" },
+            { task: "Get Mail", assignee: "Dad" }, { task: "Pick Up Clothes", assignee: "Alexia" },
+            { task: "Hand Towels", assignee: "Alexia" }, { task: "Declutter Living Area", assignee: "Everyone" },
             { task: "Laundry", assignee: "Dad" }
         ];
 
@@ -234,7 +197,6 @@
             ]}
         };
 
-        // --- 3. STATE & INIT ---
         let currentFilter = "All";
         const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const todayName = daysOfWeek[new Date().getDay()];
@@ -243,44 +205,86 @@
         async function init() {
             document.getElementById('current-day-label').innerText = `${todayName} - ${todayZoneData.zone}`;
             document.getElementById('weekly-zone-title').innerText = `${todayName} Zone: ${todayZoneData.zone}`;
-            renderFilters();
-            renderChores();
-            await loadCompletedChores(); 
+            await loadData();
         }
 
-        // --- 4. RENDER UI ---
+        // --- Auth Logic ---
+        function openPinModal(user) {
+            pendingUser = user;
+            document.getElementById('pin-subtitle').innerText = `Logging in as ${user}`;
+            document.getElementById('pin-modal').style.display = 'block';
+            document.getElementById('pin-input').value = '';
+            document.getElementById('pin-error').style.display = 'none';
+        }
+
+        function closePinModal() {
+            document.getElementById('pin-modal').style.display = 'none';
+            pendingUser = null;
+        }
+
+        async function submitPin() {
+            const pin = document.getElementById('pin-input').value;
+            try {
+                const res = await fetch(`${API_BASE_URL}/verify-pin`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: pendingUser, pin })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    authenticatedUser = pendingUser;
+                    currentFilter = pendingUser;
+                    closePinModal();
+                    renderFilters();
+                    renderChores();
+                    loadData();
+                } else {
+                    document.getElementById('pin-error').style.display = 'block';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- Render UI ---
         function renderFilters() {
             const container = document.getElementById('filter-buttons');
             container.innerHTML = '';
-            
+
+            // Find Leader (Crown)
+            let maxPoints = -1;
+            let leader = null;
+            for (let name in familyPoints) {
+                if (familyPoints[name] > maxPoints) {
+                    maxPoints = familyPoints[name];
+                    leader = name;
+                }
+            }
+
             familyMembers.forEach(member => {
-                if(member === "Everyone") return; 
-                
                 const btn = document.createElement('button');
                 btn.className = `filter-btn ${currentFilter === member ? 'active' : ''}`;
                 
+                let label = member;
                 if (familyPoints[member] !== undefined) {
-                    btn.innerText = `${member} (${familyPoints[member]})`;
-                } else {
-                    btn.innerText = member; 
+                    label += ` (${familyPoints[member]})`;
+                    if (member === leader && maxPoints > 0) label += " 👑";
+                    if (familyStreaks[member] > 0) label += " 🔥";
                 }
-
+                
+                btn.innerText = label;
                 btn.onclick = () => {
-                    currentFilter = member;
-                    renderFilters();
-                    renderChores();
-                    loadCompletedChores(); 
+                    if (member === "All" || member === authenticatedUser) {
+                        currentFilter = member;
+                        renderFilters();
+                        renderChores();
+                    } else {
+                        openPinModal(member);
+                    }
                 };
                 container.appendChild(btn);
             });
 
-            // Show Admin History Button ONLY when Dad or Mom is selected
             const historyBtn = document.getElementById('history-btn');
-            if (currentFilter === "Dad" || currentFilter === "Mom") {
-                historyBtn.style.display = "inline-block";
-            } else {
-                historyBtn.style.display = "none";
-            }
+            historyBtn.style.display = (currentFilter === "Dad" || currentFilter === "Mom") ? "inline-block" : "none";
         }
 
         function renderChores() {
@@ -295,172 +299,99 @@
                 return task.assignee.includes(currentFilter); 
             };
 
-            const createChoreHTML = (chore, index, type) => {
+            const createHTML = (chore, index, type) => {
                 const id = `${type}-${index}`;
-                return `
-                    <li class="chore-item" id="item-${id}">
-                        <label>
-                            <input type="checkbox" onchange="toggleChore(this, '${chore.task}', '${chore.assignee}')">
-                            <div class="chore-details">
-                                <span class="chore-name">${chore.task}</span>
-                                <span class="chore-assignee">${chore.assignee}</span>
-                            </div>
-                        </label>
-                    </li>
-                `;
+                return `<li class="chore-item" id="item-${id}">
+                    <label>
+                        <input type="checkbox" onchange="toggleChore(this, '${chore.task}', '${chore.assignee}')">
+                        <div class="chore-details">
+                            <span class="chore-name">${chore.task}</span>
+                            <span class="chore-assignee">${chore.assignee}</span>
+                        </div>
+                    </label>
+                </li>`;
             };
 
-            dailyChores.filter(filterTask).forEach((chore, i) => {
-                dailyContainer.innerHTML += createChoreHTML(chore, i, 'daily');
-            });
-
-            todayZoneData.tasks.filter(filterTask).forEach((chore, i) => {
-                weeklyContainer.innerHTML += createChoreHTML(chore, i, 'weekly');
-            });
+            dailyChores.filter(filterTask).forEach((c, i) => dailyContainer.innerHTML += createHTML(c, i, 'daily'));
+            todayZoneData.tasks.filter(filterTask).forEach((c, i) => weeklyContainer.innerHTML += createHTML(c, i, 'weekly'));
         }
 
-        // --- 5. FETCH DATA FROM NEON DB ---
-        async function loadCompletedChores() {
+        async function loadData() {
             try {
-                const response = await fetch(`${API_BASE_URL}/data`);
-                const data = await response.json(); 
-                
-                if (data.points) {
-                    familyPoints = data.points;
-                    renderFilters(); 
-                }
+                const res = await fetch(`${API_BASE_URL}/data`);
+                const data = await res.json();
+                familyPoints = data.points || {};
+                familyStreaks = data.streaks || {};
+                renderFilters();
 
                 const latestState = {};
                 if (data.log) {
-                    data.log.forEach(row => {
-                        const key = row.chore_name + "|" + row.assignee;
-                        latestState[key] = { status: row.status };
-                    });
+                    data.log.forEach(row => { latestState[row.chore_name + "|" + row.assignee] = row.status; });
                 }
 
-                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(box => {
+                document.querySelectorAll('input[type="checkbox"]').forEach(box => {
                     const label = box.nextElementSibling;
-                    const choreName = label.querySelector('.chore-name').innerText;
-                    const assignee = label.querySelector('.chore-assignee').innerText;
-                    
-                    const key = choreName + "|" + assignee;
-                    
-                    if (latestState[key] && latestState[key].status === true) {
-                        box.checked = true;
-                        box.closest('.chore-item').classList.add('completed');
-                    } else {
-                        box.checked = false;
-                        box.closest('.chore-item').classList.remove('completed');
-                    }
+                    const key = label.querySelector('.chore-name').innerText + "|" + label.querySelector('.chore-assignee').innerText;
+                    box.checked = !!latestState[key];
+                    box.closest('.chore-item').classList.toggle('completed', box.checked);
                 });
-            } catch (error) {
-                console.error("Failed to load data from database", error);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // --- 6. SEND DATA TO NEON DB (Optimistic UI) ---
-        window.toggleChore = function(checkboxElement, choreName, assignee) {
-            const isCompleted = checkboxElement.checked;
-            const listItem = checkboxElement.closest('.chore-item');
+        window.toggleChore = function(checkbox, choreName, assignee) {
+            if (!authenticatedUser && currentFilter !== "All") {
+                alert("Please select your name and enter your PIN first!");
+                checkbox.checked = !checkbox.checked;
+                return;
+            }
+
+            const isDone = checkbox.checked;
+            checkbox.closest('.chore-item').classList.toggle('completed', isDone);
+
+            let earner = (assignee.includes("Everyone") || assignee.includes("/")) ? (authenticatedUser || "Dad") : assignee;
             
-            if (isCompleted) {
-                listItem.classList.add('completed');
-            } else {
-                listItem.classList.remove('completed');
-            }
-
-            let earner = assignee;
-            if (earner.includes("Everyone") || earner.includes("/")) {
-                earner = currentFilter === "All" ? "Dad" : currentFilter;
-            }
-
+            // Optimistic Points Update
             if (familyPoints[earner] !== undefined) {
-                if (isCompleted) {
-                    familyPoints[earner] += 1;
-                } else {
-                    familyPoints[earner] -= 1;
-                }
-                renderFilters(); 
+                familyPoints[earner] += isDone ? 1 : -1;
+                renderFilters();
             }
-
-            const payload = {
-                choreName: choreName,
-                assignee: assignee,
-                status: isCompleted,
-                completedBy: earner 
-            };
 
             fetch(`${API_BASE_URL}/toggle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).catch(error => console.error("Database error", error));
+                body: JSON.stringify({ choreName, assignee, status: isDone, completedBy: earner })
+            }).catch(e => console.error(e));
         };
 
-        // --- 7. ADMIN HISTORY LOGIC ---
+        // --- History Logic ---
         function toggleHistory() {
-            const modal = document.getElementById('history-modal');
-            if (modal.style.display === "block") {
-                modal.style.display = "none";
-            } else {
-                modal.style.display = "block";
-                
-                // Keep dates local to prevent shifting to previous day automatically
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-                
-                document.getElementById('history-date').value = `${year}-${month}-${day}`;
-                fetchHistory(); 
+            const m = document.getElementById('history-modal');
+            m.style.display = m.style.display === "block" ? "none" : "block";
+            if (m.style.display === "block") {
+                document.getElementById('history-date').valueAsDate = new Date();
+                fetchHistory();
             }
         }
 
         async function fetchHistory() {
-            const dateStr = document.getElementById('history-date').value;
-            if (!dateStr) return;
-
-            const listContainer = document.getElementById('history-list');
-            listContainer.innerHTML = '<p>Loading...</p>';
-
+            const date = document.getElementById('history-date').value;
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<li>Loading...</li>';
             try {
-                const response = await fetch(`${API_BASE_URL}/history/${dateStr}`);
-                const data = await response.json();
-                
-                listContainer.innerHTML = '';
-                
-                if (data.length === 0) {
-                    listContainer.innerHTML = '<p>No chores logged for this date.</p>';
-                    return;
-                }
-
-                data.forEach(row => {
-                    listContainer.innerHTML += `
-                        <li class="chore-item">
-                            <div class="chore-details">
-                                <span class="chore-name">${row.chore_name}</span>
-                                <span class="chore-assignee">Assigned to: ${row.assignee} | Done by: <strong>${row.completed_by}</strong></span>
-                            </div>
-                        </li>
-                    `;
+                const res = await fetch(`${API_BASE_URL}/history/${date}`);
+                const data = await res.json();
+                list.innerHTML = data.length ? '' : '<li>No chores found.</li>';
+                data.forEach(r => {
+                    list.innerHTML += `<li class="chore-item">
+                        <div class="chore-details">
+                            <span class="chore-name">${r.chore_name}</span>
+                            <span class="chore-assignee">Done by: <strong>${r.completed_by}</strong></span>
+                        </div>
+                    </li>`;
                 });
-            } catch (error) {
-                console.error("Failed to load history", error);
-                listContainer.innerHTML = '<p>Error loading history.</p>';
-            }
+            } catch (e) { list.innerHTML = '<li>Error loading history.</li>'; }
         }
 
-        // Register Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(error => {
-                    console.log('Service Worker registration failed:', error);
-                });
-            });
-        }
-
-        // Start App
         init();
     </script>
 </body>
