@@ -284,6 +284,13 @@ const API_BASE_URL = "/api";
                 weeklyContainer.innerHTML += createChoreHTML(chore, i, 'weekly');
             });
         }
+        // Show the Admin History button only for Mom and Dad
+        const historyBtn = document.getElementById('history-btn');
+        if (currentFilter === "Dad" || currentFilter === "Mom") {
+            historyBtn.style.display = "inline-block";
+        } else {
+            historyBtn.style.display = "none";
+        }
 
         // --- 5. FETCH DATA FROM NEON DB ---
         async function loadCompletedChores() {
@@ -385,12 +392,60 @@ const API_BASE_URL = "/api";
                 });
             });
         }
+        // --- ADMIN HISTORY LOGIC ---
+        function toggleHistory() {
+            const modal = document.getElementById('history-modal');
+            if (modal.style.display === "block") {
+                modal.style.display = "none";
+            } else {
+                modal.style.display = "block";
+                // Default the calendar picker to today's date
+                document.getElementById('history-date').valueAsDate = new Date();
+                fetchHistory(); 
+            }
+        }
+
+        async function fetchHistory() {
+            const dateStr = document.getElementById('history-date').value;
+            if (!dateStr) return;
+
+            const listContainer = document.getElementById('history-list');
+            listContainer.innerHTML = '<p>Loading...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/history/${dateStr}`);
+                const data = await response.json();
+                
+                listContainer.innerHTML = '';
+                
+                if (data.length === 0) {
+                    listContainer.innerHTML = '<p>No chores logged for this date.</p>';
+                    return;
+                }
+
+                data.forEach(row => {
+                    listContainer.innerHTML += `
+                        <li class="chore-item">
+                            <div class="chore-details">
+                                <span class="chore-name">${row.chore_name}</span>
+                                <span class="chore-assignee">Assigned to: ${row.assignee} | Done by: <strong>${row.completed_by}</strong></span>
+                            </div>
+                        </li>
+                    `;
+                });
+            } catch (error) {
+                console.error("Failed to load history", error);
+                listContainer.innerHTML = '<p>Error loading history.</p>';
+            }
+        }
+        
         // Start App
         init();
     </script>
 </body>
 
 </html>
+
 
 
 
