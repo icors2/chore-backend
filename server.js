@@ -78,5 +78,20 @@ app.post('/api/toggle', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+// GET Route: Admin History - fetch completed chores for a specific date
+app.get('/api/history/:date', async (req, res) => {
+  try {
+    const { date } = req.params;
+    // Look up any chores marked as true on the requested date
+    const historyResult = await pool.query(
+      'SELECT chore_name, assignee, completed_by FROM chore_logs WHERE status = true AND completed_date = $1',
+      [date]
+    );
+    res.json(historyResult.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+
