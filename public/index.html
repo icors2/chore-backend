@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Chore Tracker</title>
+    
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#4a90e2">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -35,6 +37,20 @@
             z-index: 100;
         }
         h1 { margin: 0 0 10px 0; font-size: 24px; }
+        
+        /* Admin Button - Hidden by default */
+        #history-btn { 
+            display: none; 
+            background-color: #333; 
+            color: white; 
+            border: none; 
+            padding: 8px 15px; 
+            border-radius: 5px; 
+            margin-bottom: 15px; 
+            cursor: pointer;
+            font-size: 14px;
+        }
+
         #current-day-label { color: var(--text-light); font-size: 16px; margin-bottom: 15px;}
         
         .filter-container {
@@ -93,32 +109,49 @@
         .chore-assignee { font-size: 12px; color: var(--text-light); margin-top: 4px; }
         .completed .chore-name { text-decoration: line-through; color: var(--text-light); }
         .completed { opacity: 0.7; }
+
         /* Admin History Modal Styles */
         .modal { 
-            display: none; position: fixed; z-index: 200; left: 0; top: 0; 
-            width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); 
+            display: none; 
+            position: fixed; 
+            z-index: 200; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.5); 
         }
         .modal-content { 
-            background-color: var(--card-bg); margin: 15% auto; padding: 20px; 
-            border-radius: 10px; width: 85%; max-width: 500px; max-height: 70vh; overflow-y: auto;
+            background-color: var(--card-bg); 
+            margin: 15% auto; 
+            padding: 20px; 
+            border-radius: 10px; 
+            width: 85%; 
+            max-width: 500px; 
+            max-height: 70vh; 
+            overflow-y: auto;
         }
         .close-btn { color: var(--text-light); float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        #history-btn { 
-            display: none; /* Hidden by default */
-            background-color: #333; color: white; border: none; 
-            padding: 8px 15px; border-radius: 5px; margin-top: 10px; cursor: pointer;
-        }
-        #history-date { padding: 8px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+        #history-date { padding: 8px; margin-bottom: 15px; width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 5px;}
     </style>
 </head>
 <body>
 
-   <header>
+    <header>
         <h1>Chore Tracker</h1>
-        <button id="history-btn" onclick="toggleHistory()">📅 View History</button> <div id="current-day-label"></div>
+        <button id="history-btn" onclick="toggleHistory()">📅 View History</button>
+        <div id="current-day-label"></div>
         <div class="filter-container" id="filter-buttons">
             </div>
     </header>
+
+    <div class="container">
+        <h2>Daily Chores</h2>
+        <ul class="chore-list" id="daily-chores-list"></ul>
+
+        <h2 id="weekly-zone-title">Weekly Zone</h2>
+        <ul class="chore-list" id="weekly-chores-list"></ul>
+    </div>
 
     <div id="history-modal" class="modal">
         <div class="modal-content">
@@ -129,18 +162,10 @@
         </div>
     </div>
 
-    <div class="container">
-        <h2>Daily Chores</h2>
-        <ul class="chore-list" id="daily-chores-list"></ul>
-
-        <h2 id="weekly-zone-title">Weekly Zone</h2>
-        <ul class="chore-list" id="weekly-chores-list"></ul>
-    </div>
-
     <script>
         // --- 1. CONFIGURATION ---
-// It now just looks locally for the API!
-const API_BASE_URL = "/api";
+        // Looks directly at your Render Node.js server
+        const API_BASE_URL = "/api";
 
         // --- 2. DATA STRUCTURE ---
         const familyMembers = ["All", "Everyone", "Dad", "Mom", "Aubriella", "Christopher", "Alexia"];
@@ -227,6 +252,7 @@ const API_BASE_URL = "/api";
         function renderFilters() {
             const container = document.getElementById('filter-buttons');
             container.innerHTML = '';
+            
             familyMembers.forEach(member => {
                 if(member === "Everyone") return; 
                 
@@ -247,6 +273,14 @@ const API_BASE_URL = "/api";
                 };
                 container.appendChild(btn);
             });
+
+            // Show Admin History Button ONLY when Dad or Mom is selected
+            const historyBtn = document.getElementById('history-btn');
+            if (currentFilter === "Dad" || currentFilter === "Mom") {
+                historyBtn.style.display = "inline-block";
+            } else {
+                historyBtn.style.display = "none";
+            }
         }
 
         function renderChores() {
@@ -284,36 +318,23 @@ const API_BASE_URL = "/api";
                 weeklyContainer.innerHTML += createChoreHTML(chore, i, 'weekly');
             });
         }
-        // Show the Admin History button only for Mom and Dad
-        const historyBtn = document.getElementById('history-btn');
-        if (currentFilter === "Dad" || currentFilter === "Mom") {
-            historyBtn.style.display = "inline-block";
-        } else {
-            historyBtn.style.display = "none";
-        }
 
         // --- 5. FETCH DATA FROM NEON DB ---
         async function loadCompletedChores() {
             try {
-                // Pointing to your new Node API GET route
                 const response = await fetch(`${API_BASE_URL}/data`);
                 const data = await response.json(); 
                 
-                // 1. Update the Points from the Neon Bank
                 if (data.points) {
                     familyPoints = data.points;
                     renderFilters(); 
                 }
 
-                // 2. Process today's checkboxes
                 const latestState = {};
                 if (data.log) {
                     data.log.forEach(row => {
-                        // The database returns snake_case for column names
                         const key = row.chore_name + "|" + row.assignee;
-                        latestState[key] = {
-                            status: row.status 
-                        };
+                        latestState[key] = { status: row.status };
                     });
                 }
 
@@ -343,20 +364,17 @@ const API_BASE_URL = "/api";
             const isCompleted = checkboxElement.checked;
             const listItem = checkboxElement.closest('.chore-item');
             
-            // A. Visual Update Immediately
             if (isCompleted) {
                 listItem.classList.add('completed');
             } else {
                 listItem.classList.remove('completed');
             }
 
-            // B. Figure out who gets the point
             let earner = assignee;
             if (earner.includes("Everyone") || earner.includes("/")) {
                 earner = currentFilter === "All" ? "Dad" : currentFilter;
             }
 
-            // C. Math Update Immediately
             if (familyPoints[earner] !== undefined) {
                 if (isCompleted) {
                     familyPoints[earner] += 1;
@@ -366,7 +384,6 @@ const API_BASE_URL = "/api";
                 renderFilters(); 
             }
 
-            // D. Background Sync with standard JSON
             const payload = {
                 choreName: choreName,
                 assignee: assignee,
@@ -376,31 +393,26 @@ const API_BASE_URL = "/api";
 
             fetch(`${API_BASE_URL}/toggle`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
-            }).catch(error => {
-                console.error("Failed to save chore to database", error);
-            });
+            }).catch(error => console.error("Database error", error));
         };
-// Register Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').catch(error => {
-                    console.log('Service Worker registration failed:', error);
-                });
-            });
-        }
-        // --- ADMIN HISTORY LOGIC ---
+
+        // --- 7. ADMIN HISTORY LOGIC ---
         function toggleHistory() {
             const modal = document.getElementById('history-modal');
             if (modal.style.display === "block") {
                 modal.style.display = "none";
             } else {
                 modal.style.display = "block";
-                // Default the calendar picker to today's date
-                document.getElementById('history-date').valueAsDate = new Date();
+                
+                // Keep dates local to prevent shifting to previous day automatically
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                
+                document.getElementById('history-date').value = `${year}-${month}-${day}`;
                 fetchHistory(); 
             }
         }
@@ -438,14 +450,18 @@ const API_BASE_URL = "/api";
                 listContainer.innerHTML = '<p>Error loading history.</p>';
             }
         }
-        
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+            });
+        }
+
         // Start App
         init();
     </script>
 </body>
-
 </html>
-
-
-
-
